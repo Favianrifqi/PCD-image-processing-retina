@@ -6,11 +6,19 @@ __pycache__/
 *.py[cod]
 
 # Dataset
-data/raw/
-data/processed/
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
 
 # Generated results
-results/
+results/*/*
+!results/negative/.gitkeep
+!results/grayscale/.gitkeep
+!results/brightening/.gitkeep
+!results/arithmetic/.gitkeep
+!results/geometry/.gitkeep
 
 # IDE
 .vscode/
