@@ -7,12 +7,10 @@ from preprocessing import (
     RESULTS_DIR
 )
 
+
 def rotation90_ccw(image):
     """
     Rotasi citra 90 derajat berlawanan arah jarum jam (CCW).
-
-    A berukuran M x N
-    B berukuran N x M
 
     B[N - 1 - j][i] = A[i][j]
     """
@@ -41,9 +39,6 @@ def rotation90_cw(image):
     """
     Rotasi citra 90 derajat searah jarum jam (CW).
 
-    A berukuran M x N
-    B berukuran N x M
-
     B[j][M - 1 - i] = A[i][j]
     """
 
@@ -66,7 +61,12 @@ def rotation90_cw(image):
 
     return result
 
+
 def rotation180(image):
+    """
+    Rotasi 180° dengan melakukan
+    rotasi 90° dua kali.
+    """
 
     result = rotation90_ccw(image)
     result = rotation90_ccw(result)
@@ -81,96 +81,63 @@ def process_images(total_data):
             "Jumlah data harus lebih besar dari 0."
         )
 
-    # Menentukan jumlah masing-masing kelas
-    normal_count = total_data // 2
-    pneumonia_count = total_data - normal_count
+    images = get_images("training")
 
-    # Mengambil daftar citra
-    normal_images = get_images(
-        "train",
-        "NORMAL"
-    )
-
-    pneumonia_images = get_images(
-        "train",
-        "PNEUMONIA"
-    )
-
-    if normal_count > len(normal_images):
+    if total_data > len(images):
         raise ValueError(
-            f"Data NORMAL tidak mencukupi. "
-            f"Dibutuhkan {normal_count}, "
-            f"tersedia {len(normal_images)}."
+            f"Data tidak mencukupi. "
+            f"Diminta {total_data}, "
+            f"tersedia {len(images)}."
         )
 
-    if pneumonia_count > len(pneumonia_images):
-        raise ValueError(
-            f"Data PNEUMONIA tidak mencukupi. "
-            f"Dibutuhkan {pneumonia_count}, "
-            f"tersedia {len(pneumonia_images)}."
+    selected_images = images[:total_data]
+
+    output_dir = (
+        RESULTS_DIR
+        / "geometry"
+        / "rotation"
+    )
+
+    for image_path in selected_images:
+
+        print(
+            f"Memproses: {image_path.name}"
         )
-
-    selected_normal = normal_images[:normal_count]
-    selected_pneumonia = pneumonia_images[:pneumonia_count]
-
-    selected_images = [
-        ("NORMAL", image)
-        for image in selected_normal
-    ]
-
-    selected_images += [
-        ("PNEUMONIA", image)
-        for image in selected_pneumonia
-    ]
-
-    # Memproses setiap citra
-    for category, image_path in selected_images:
-
-        print(f"Memproses: {category} / {image_path.name}")
 
         image = load_image(image_path)
 
-        # Rotasi
-        image_ccw = rotation90_ccw(image)
-        image_cw = rotation90_cw(image)
-        image_180 = rotation180(image)
-
-        # Folder output
-        output_dir = (
-            RESULTS_DIR
-            / "geometry"
-            / "rotation"
-            / category
-        )
+        rotated_ccw = rotation90_ccw(image)
+        rotated_cw = rotation90_cw(image)
+        rotated_180 = rotation180(image)
 
         filename = image_path.stem
 
-        # Simpan hasil
         save_image(
-            image_ccw,
+            rotated_ccw,
             output_dir / f"{filename}_90ccw.png"
         )
 
         save_image(
-            image_cw,
+            rotated_cw,
             output_dir / f"{filename}_90cw.png"
         )
 
         save_image(
-            image_180,
+            rotated_180,
             output_dir / f"{filename}_180.png"
         )
 
     print()
     print("Proses rotasi selesai.")
-    print(f"Total citra     : {total_data}")
-    print(f"NORMAL          : {normal_count}")
-    print(f"PNEUMONIA       : {pneumonia_count}")
+    print(f"Jumlah data : {total_data}")
+
 
 if __name__ == "__main__":
 
     jumlah_data = int(
-        input("Masukkan jumlah data yang ingin di-rotate: ")
+        input(
+            "Masukkan jumlah data yang ingin di-rotate: "
+        )
     )
 
     process_images(jumlah_data)

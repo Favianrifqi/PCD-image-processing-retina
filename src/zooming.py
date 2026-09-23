@@ -9,15 +9,6 @@ from preprocessing import (
 
 
 def zoom_out(image):
-    """
-    Perbesaran citra dengan faktor skala 2.
-
-    Setiap pixel pada citra asli disalin
-    menjadi blok 2x2 pada citra hasil.
-
-    Ukuran:
-        M x N -> 2M x 2N
-    """
 
     M, N = image.shape[:2]
 
@@ -36,7 +27,6 @@ def zoom_out(image):
     n = 0
 
     for i in range(M):
-
         for j in range(N):
 
             result[m, n] = image[i, j]
@@ -51,16 +41,8 @@ def zoom_out(image):
 
     return result
 
+
 def zoom_in(image):
-    """
-    Pengecilan citra dengan faktor skala 1/2.
-
-    Setiap 4 pixel yang bertetangga
-    dirata-ratakan menjadi 1 pixel.
-
-    Ukuran:
-        M x N -> M/2 x N/2
-    """
 
     M, N = image.shape[:2]
 
@@ -79,7 +61,6 @@ def zoom_in(image):
         )
 
     for i in range(new_M):
-
         for j in range(new_N):
 
             pixel1 = image[i * 2, j * 2]
@@ -98,55 +79,35 @@ def zoom_in(image):
 
     return result
 
-if __name__ == "__main__":
 
-    jumlah_data = int(
-        input("Masukkan jumlah data yang ingin di-zoom: ")
-    )
+def process_images(total_data):
 
-    if jumlah_data <= 0:
+    if total_data <= 0:
         raise ValueError(
             "Jumlah data harus lebih besar dari 0."
         )
 
-    normal_count = jumlah_data // 2
-    pneumonia_count = jumlah_data - normal_count
+    images = get_images("training")
 
-    normal_images = get_images(
-        "train",
-        "NORMAL"
-    )
-
-    pneumonia_images = get_images(
-        "train",
-        "PNEUMONIA"
-    )
-
-    if normal_count > len(normal_images):
+    if total_data > len(images):
         raise ValueError(
-            "Jumlah data NORMAL tidak mencukupi."
+            f"Jumlah data tidak mencukupi. "
+            f"Diminta: {total_data}, "
+            f"tersedia: {len(images)}."
         )
 
-    if pneumonia_count > len(pneumonia_images):
-        raise ValueError(
-            "Jumlah data PNEUMONIA tidak mencukupi."
-        )
+    selected_images = images[:total_data]
 
-    selected_images = [
-        ("NORMAL", image)
-        for image in normal_images[:normal_count]
-    ]
+    output_dir = (
+        RESULTS_DIR
+        / "geometry"
+        / "zooming"
+    )
 
-    selected_images += [
-        ("PNEUMONIA", image)
-        for image in pneumonia_images[:pneumonia_count]
-    ]
-
-    for category, image_path in selected_images:
+    for image_path in selected_images:
 
         print(
-            f"Memproses: "
-            f"{category} / {image_path.name}"
+            f"Memproses: {image_path.name}"
         )
 
         image = load_image(image_path)
@@ -157,25 +118,50 @@ if __name__ == "__main__":
 
         filename = image_path.stem
 
-        output_dir = (
-            RESULTS_DIR
-            / "geometry"
-            / "zooming"
-            / category
-        )
-
         save_image(
             zoomed_out,
-            output_dir / f"{filename}_zoom2x.png"
+            output_dir
+            / f"{filename}_zoom2x.png"
         )
 
         save_image(
             zoomed_in,
-            output_dir / f"{filename}_zoom05x.png"
+            output_dir
+            / f"{filename}_zoom05x.png"
+        )
+
+        # Informasi ukuran
+        original_height, original_width = image.shape[:2]
+
+        zoom2_height, zoom2_width = zoomed_out.shape[:2]
+
+        zoom05_height, zoom05_width = zoomed_in.shape[:2]
+
+        print(
+            f"  Original : "
+            f"{original_width} x {original_height}"
+        )
+
+        print(
+            f"  Zoom 2x  : "
+            f"{zoom2_width} x {zoom2_height}"
+        )
+
+        print(
+            f"  Zoom 1/2 : "
+            f"{zoom05_width} x {zoom05_height}"
         )
 
     print()
     print("Proses zooming selesai.")
-    print(f"Total citra     : {jumlah_data}")
-    print(f"NORMAL          : {normal_count}")
-    print(f"PNEUMONIA       : {pneumonia_count}")
+    print(f"Jumlah data : {total_data}")
+
+if __name__ == "__main__":
+
+    jumlah_data = int(
+        input(
+            "Masukkan jumlah data yang ingin di-zoom: "
+        )
+    )
+
+    process_images(jumlah_data)

@@ -3,13 +3,13 @@ import cv2
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DATASET_DIR = BASE_DIR / "data" / "raw" / "chest_xray"
+DATASET_DIR = BASE_DIR / "data" / "raw" / "DRIVE"
 
 RESULTS_DIR = BASE_DIR / "results"
 
 
 def load_image(image_path):
-  
+
     image_path = Path(image_path)
 
     if not image_path.exists():
@@ -17,7 +17,10 @@ def load_image(image_path):
             f"Citra tidak ditemukan: {image_path}"
         )
 
-    image = cv2.imread(str(image_path))
+    image = cv2.imread(
+        str(image_path),
+        cv2.IMREAD_COLOR
+    )
 
     if image is None:
         raise ValueError(
@@ -47,13 +50,13 @@ def save_image(image, output_path):
         )
 
 
-def get_images(split, category):
+def get_images(split="training"):
 
-    folder = DATASET_DIR / split / category
+    image_dir = DATASET_DIR / split / "images"
 
-    if not folder.exists():
+    if not image_dir.exists():
         raise FileNotFoundError(
-            f"Folder dataset tidak ditemukan: {folder}"
+            f"Folder citra tidak ditemukan: {image_dir}"
         )
 
     image_extensions = {
@@ -67,7 +70,7 @@ def get_images(split, category):
 
     images = [
         path
-        for path in folder.iterdir()
+        for path in image_dir.iterdir()
         if path.is_file()
         and path.suffix.lower() in image_extensions
     ]
