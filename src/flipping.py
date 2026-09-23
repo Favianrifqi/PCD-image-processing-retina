@@ -7,7 +7,7 @@ import os
 # ==========================================
 
 input_folder = "data/raw/DRIVE/training/images"
-output_folder = "results/geometry"
+output_folder = "results/geometry/flipping"
 
 
 # Membuat folder output jika belum ada
