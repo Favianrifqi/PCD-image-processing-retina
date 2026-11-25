@@ -1,9 +1,24 @@
-feature/negative-grayscale-thresholding
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import argparse
+
+GAMMA = 0.8  # nilai gamma pada konfigurasi 3 jurnal
+
+
+def gamma_correction(image, gamma=GAMMA):
+    """
+    Koreksi gamma non-linear sesuai jurnal:
+        out = (in / 255)^gamma * 255
+
+    gamma < 1 membuat area gelap menjadi lebih terang.
+    """
+    normalized = image.astype(np.float32) / 255.0
+    corrected = np.power(normalized, gamma) * 255.0
+
+    return np.clip(corrected, 0, 255).astype(np.uint8)
+
 
 def add_grayscale_colorbar(ax, max_val):
     """Menambahkan pita gradasi 0-255 dinamis di bawah grafik histogram"""
@@ -39,8 +54,11 @@ def process_histogram_techniques(input_path, output_dir):
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     img_clahe = clahe.apply(img_gray)
 
-    # D. VISUALISASI PERBANDINGAN ENHANCEMENT
-    fig, axes = plt.subplots(4, 2, figsize=(12, 16))
+    # D. GAMMA CORRECTION (diterapkan setelah CLAHE)
+    img_gamma = gamma_correction(img_clahe, GAMMA)
+
+    # E. VISUALISASI PERBANDINGAN ENHANCEMENT
+    fig, axes = plt.subplots(5, 2, figsize=(12, 20))
 
     # 1. Citra Asli vs Histogram Normalisasi
     axes[0, 0].imshow(img_gray, cmap='gray')
@@ -60,7 +78,7 @@ def process_histogram_techniques(input_path, output_dir):
     axes[1, 0].axis('off')
     
     hist_str, _ = np.histogram(img_stretched.ravel(), 256, [0, 256])
-    axes[1, 1].hist(img_stretched.ravel(), 256, [0, 256], color='#3388ff')
+    axes[1, 1].hist(img_stretched.ravel(), bins=256, range=(0, 256), color='#3388ff')
     axes[1, 1].set_title("Histogram After Stretching")
     axes[1, 1].set_xlim([0, 255])
     add_grayscale_colorbar(axes[1, 1], max(hist_str))
@@ -71,7 +89,7 @@ def process_histogram_techniques(input_path, output_dir):
     axes[2, 0].axis('off')
     
     hist_eq, _ = np.histogram(img_equalized.ravel(), 256, [0, 256])
-    axes[2, 1].hist(img_equalized.ravel(), 256, [0, 256], color='#3388ff')
+    axes[2, 1].hist(img_equalized.ravel(), bins=256, range=(0, 256), color='#3388ff')
     axes[2, 1].set_title("Histogram After Equalization")
     axes[2, 1].set_xlim([0, 255])
     add_grayscale_colorbar(axes[2, 1], max(hist_eq))
@@ -82,17 +100,28 @@ def process_histogram_techniques(input_path, output_dir):
     axes[3, 0].axis('off')
     
     hist_clahe, _ = np.histogram(img_clahe.ravel(), 256, [0, 256])
-    axes[3, 1].hist(img_clahe.ravel(), 256, [0, 256], color='#3388ff')
+    axes[3, 1].hist(img_clahe.ravel(), bins=256, range=(0, 256), color='#3388ff')
     axes[3, 1].set_title("Histogram After CLAHE")
     axes[3, 1].set_xlim([0, 255])
     add_grayscale_colorbar(axes[3, 1], max(hist_clahe))
+
+    # 5. CLAHE + Gamma Correction (γ = 0.8)
+    axes[4, 0].imshow(img_gamma, cmap='gray')
+    axes[4, 0].set_title(f"5. CLAHE + Gamma Correction (γ={GAMMA})")
+    axes[4, 0].axis('off')
+
+    hist_gamma, _ = np.histogram(img_gamma.ravel(), 256, [0, 256])
+    axes[4, 1].hist(img_gamma.ravel(), bins=256, range=(0, 256), color='#3388ff')
+    axes[4, 1].set_title(f"Histogram After Gamma (γ={GAMMA})")
+    axes[4, 1].set_xlim([0, 255])
+    add_grayscale_colorbar(axes[4, 1], max(hist_gamma))
 
     plt.tight_layout()
     plot_path = os.path.join(output_dir, "histogram_enhancement_comparison.png")
     plt.savefig(plot_path)
     plt.close()
 
-    # E. VISUALISASI HISTOGRAM WARNA (RGB)
+    # F. VISUALISASI HISTOGRAM WARNA (RGB)
     plt.figure(figsize=(10, 4))
     plt.subplot(1, 2, 1)
     plt.imshow(img_color_rgb)
@@ -113,7 +142,15 @@ def process_histogram_techniques(input_path, output_dir):
     plt.savefig(color_plot_path)
     plt.close()
 
+    # Simpan hasil preprocessing yang bisa dipakai tahap berikutnya
+    cv2.imwrite(os.path.join(output_dir, "clahe_corrected.png"), img_clahe)
+    cv2.imwrite(
+        os.path.join(output_dir, f"clahe_gamma_{str(GAMMA).replace('.', '_')}.png"),
+        img_gamma,
+    )
+
     print(f"Hasil visualisasi berhasil disimpan di folder: {output_dir}")
+    print(f"Koreksi gamma diterapkan setelah CLAHE dengan gamma={GAMMA}.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="P4 - Histogram Processing & Enhancement")
